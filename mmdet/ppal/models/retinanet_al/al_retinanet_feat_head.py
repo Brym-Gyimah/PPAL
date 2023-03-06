@@ -10,14 +10,14 @@ from mmcv.runner import BaseModule, force_fp32, get_dist_info
 
 from mmdet.core.utils import filter_scores_and_topk, select_single_mlvl
 from mmdet.models.builder import HEADS
-from mmdet.models.dense_heads.retina_head import RetinaHead
+from mmdet.models.dense_heads.fcos_head import FCOSHead
 
 from mmdet.ppal.models.utils import get_img_score_distance_matrix_slow, concat_all_gather, get_inter_feats
 
 @HEADS.register_module()
-class RetinaHeadFeat(RetinaHead):
+class FCOSHeadFeat(FCOSHead):
     def __init__(self, total_images, max_det, feat_dim, output_path, **kwargs):
-        super(RetinaHeadFeat, self).__init__(**kwargs)
+        super(FCOSHeadFeat, self).__init__(**kwargs)
 
         _, world_size = get_dist_info()
         assert total_images % world_size == 0  # 8 GPUs
