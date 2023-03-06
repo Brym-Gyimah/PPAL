@@ -10,14 +10,14 @@ from mmcv.runner import BaseModule, force_fp32, get_dist_info
 
 from mmdet.core.utils import filter_scores_and_topk, select_single_mlvl
 from mmdet.models.builder import HEADS
-from mmdet.models.dense_heads.fcos_head import FCOSHead
+from mmdet.models.dense_heads.retina_head import RetinaHead
 
 from mmdet.ppal.models.utils import get_img_score_distance_matrix_slow, concat_all_gather, get_inter_feats
 
 @HEADS.register_module()
-class FCOSHeadFeat(FCOSHead):
+class RetinaHeadFeat(RetinaHead):
     def __init__(self, total_images, max_det, feat_dim, output_path, **kwargs):
-        super(FCOSHeadFeat, self).__init__(**kwargs)
+        super(RetinaHeadFeat, self).__init__(**kwargs)
 
         _, world_size = get_dist_info()
         assert total_images % world_size == 0  # 8 GPUs
@@ -35,10 +35,8 @@ class FCOSHeadFeat(FCOSHead):
 
     def forward_single(self, x):
         """Forward feature of a single scale level.
-
         Args:
             x (Tensor): Features of a single scale level.
-
         Returns:
             tuple:
                 cls_score (Tensor): Cls scores for a single scale level
@@ -60,14 +58,12 @@ class FCOSHeadFeat(FCOSHead):
         """Test det bboxes without test-time augmentation, can be applied in
         DenseHead except for ``RPNHead`` and its variants, e.g., ``GARPNHead``,
         etc.
-
         Args:
             feats (tuple[torch.Tensor]): Multi-level features from the
                 upstream network, each is a 4D-tensor.
             img_metas (list[dict]): List of image information.
             rescale (bool, optional): Whether to rescale the results.
                 Defaults to False.
-
         Returns:
             list[tuple[Tensor, Tensor]]: Each item in result_list is 2-tuple.
                 The first item is ``bboxes`` with shape (n, 5),
@@ -93,11 +89,9 @@ class FCOSHeadFeat(FCOSHead):
                    with_nms=True,
                    **kwargs):
         """Transform network outputs of a batch into bbox results.
-
         Note: When score_factors is not None, the cls_scores are
         usually multiplied by it then obtain the real score used in NMS,
         such as CenterNess in FCOS, IoU branch in ATSS.
-
         Args:
             cls_scores (list[Tensor]): Classification scores for all
                 scale levels, each is a 4D-tensor, has shape
@@ -115,7 +109,6 @@ class FCOSHeadFeat(FCOSHead):
                 Default False.
             with_nms (bool): If True, do nms before return boxes.
                 Default True.
-
         Returns:
             list[list[Tensor, Tensor]]: Each item in result_list is 2-tuple.
                 The first item is an (n, 5) tensor, where the first 4 columns
@@ -173,7 +166,6 @@ class FCOSHeadFeat(FCOSHead):
                            with_nms=True,
                            **kwargs):
         """Transform outputs of a single image into bbox predictions.
-
         Args:
             cls_score_list (list[Tensor]): Box scores from all scale
                 levels of a single image, each item has shape
@@ -197,14 +189,12 @@ class FCOSHeadFeat(FCOSHead):
                 Default: False.
             with_nms (bool): If True, do nms before return boxes.
                 Default: True.
-
         Returns:
             tuple[Tensor]: Results of detected bboxes and labels. If with_nms
                 is False and mlvl_score_factor is None, return mlvl_bboxes and
                 mlvl_scores, else return mlvl_bboxes, mlvl_scores and
                 mlvl_score_factor. Usually with_nms is False is used for aug
                 test. If with_nms is True, then return the following format
-
                 - det_bboxes (Tensor): Predicted bboxes with shape \
                     [num_bboxes, 5], where the first 4 columns are bounding \
                     box positions (tl_x, tl_y, br_x, br_y) and the 5-th \
@@ -289,10 +279,8 @@ class FCOSHeadFeat(FCOSHead):
                            mlvl_score_factors=None,
                            **kwargs):
         """bbox post-processing method.
-
         The boxes would be rescaled to the original image scale and do
         the nms operation. Usually `with_nms` is False is used for aug test.
-
         Args:
             mlvl_scores (list[Tensor]): Box scores from all scale
                 levels of a single image, each item has shape
@@ -313,14 +301,12 @@ class FCOSHeadFeat(FCOSHead):
             mlvl_score_factors (list[Tensor], optional): Score factor from
                 all scale levels of a single image, each item has shape
                 (num_bboxes, ). Default: None.
-
         Returns:
             tuple[Tensor]: Results of detected bboxes and labels. If with_nms
                 is False and mlvl_score_factor is None, return mlvl_bboxes and
                 mlvl_scores, else return mlvl_bboxes, mlvl_scores and
                 mlvl_score_factor. Usually with_nms is False is used for aug
                 test. If with_nms is True, then return the following format
-
                 - det_bboxes (Tensor): Predicted bboxes with shape \
                     [num_bboxes, 5], where the first 4 columns are bounding \
                     box positions (tl_x, tl_y, br_x, br_y) and the 5-th \
@@ -409,6 +395,3 @@ class FCOSHeadFeat(FCOSHead):
             np.save(fwb, img_dis_mat)
             np.save(fwb, img_ids)
         return
-
-
-
