@@ -2,15 +2,15 @@ import torch
 import numpy as np
 
 from mmdet.models.builder import DETECTORS
-from mmdet.models.detectors.retinanet import RetinaNet
+from mmdet.models.detectors.fcos import FCOS
 from mmdet.ppal.models.utils import bbox2result_with_uncertainty
 
 @DETECTORS.register_module()
-class ALRetinaNet(RetinaNet):
+class ALFCOS(FCOS):
 
     def __init__(self,
                  **kwargs):
-        super(ALRetinaNet, self).__init__(**kwargs)
+        super(ALFCOS, self).__init__(**kwargs)
 
     def extract_feat(self, img):
         """Directly extract features from the backbone+neck."""
