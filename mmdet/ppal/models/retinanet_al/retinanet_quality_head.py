@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
 from mmcv.runner import force_fp32
+import ot
 from mmdet.core import (anchor_inside_flags, build_assigner, build_bbox_coder,
                         build_prior_generator, build_sampler, images_to_levels,
                         multi_apply, unmap)
