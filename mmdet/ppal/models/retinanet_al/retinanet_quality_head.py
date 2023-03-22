@@ -38,6 +38,7 @@ class RetinaQualityEMAHead(RetinaHead):
                          bias_prob=0.01)),
                  base_momentum=0.999,
                  quality_xi=0.6,
+                 lambda_=0.5,
                  **kwargs):
         self.stacked_convs = stacked_convs
         self.conv_cfg = conv_cfg
@@ -49,6 +50,7 @@ class RetinaQualityEMAHead(RetinaHead):
             init_cfg=init_cfg,
             **kwargs)
         self.quality_xi = quality_xi
+        self.lambda_ = lambda_
 
         self.register_buffer('class_momentum', torch.ones((num_classes,)) * base_momentum)
         self.register_buffer('class_quality', torch.zeros((num_classes,)))
@@ -108,7 +110,15 @@ class RetinaQualityEMAHead(RetinaHead):
                 _labels = labels[valid_inds]
                 iou = bbox_overlaps(_bbox_pred[valid_inds], _bbox_gt[valid_inds], is_aligned=True)
                 p = torch.sigmoid(cls_score[valid_inds])[torch.arange(iou.shape[0], dtype=torch.long).to(device=iou.device), _labels]
-                quality = torch.pow(p, self.quality_xi) * torch.pow(iou, 1. - self.quality_xi)
+                
+                # Compute Wasserstein distance between predicted and ground truth bounding box distributions
+                #M = ot.dist(_bbox_pred[valid_inds].cpu().numpy(), _bbox_gt[valid_inds].cpu().numpy(), metric='euclidean')
+                M = ot.dist(_bbox_pred[valid_inds], _bbox_gt[valid_inds], metric='euclidean')
+                T = ot.emd(F.softmax(cls_score[valid_inds], dim=1).cpu().numpy(), F.one_hot(_labels, num_classes=self.num_classes).cpu().numpy(), M)
+                wasserstein_distance = np.sum(T * M)
+
+                # Compute quality score based on class score, IoU, and Wasserstein distance
+                quality = torch.pow(p, self.quality_xi) * torch.pow(iou, 1. - self.quality_xi) * torch.exp(-self.lambda_ * wasserstein_distance)              
                 classwise_quality = torch.stack((_labels, quality), dim=-1)
 
         loss_bbox = self.loss_bbox(
