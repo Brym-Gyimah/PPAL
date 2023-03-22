@@ -200,9 +200,19 @@ class RetinaQualityEMAHead(RetinaHead):
             classwise_quality = torch.cat(classwise_quality, dim=0)
             _classes = classwise_quality[:, 0]
             _qualities = classwise_quality[:, 1]
+            
+            
+            # Compute class weights
+            class_weights = 1.0 / (classwise_quality.new_full((self.num_classes,), 0) + 1e-5)
+            for i in range(self.num_classes):
+                class_weights[i] = 1.0 / ((_classes == i).sum() + 1e-5)
 
-            collected_counts = classwise_quality.new_full((self.num_classes,), 0)
-            collected_qualities = classwise_quality.new_full((self.num_classes,), 0)
+                
+            # Compute weighted counts and qualities
+            collected_counts = (class_weights * (_classes >= 0)).sum(dim=0)
+            collected_qualities = (class_weights * _qualities).sum(dim=0)
+            
+            
             for i in range(self.num_classes):
                 cq = _qualities[_classes == i]
                 if cq.numel() > 0:
